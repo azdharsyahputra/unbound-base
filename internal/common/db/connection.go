@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"unbound/internal/auth"
+	"unbound/internal/post"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -23,5 +25,12 @@ func ConnectDB() *gorm.DB {
 	if err != nil {
 		log.Fatal("Failed to connect to DB:", err)
 	}
+
+	err = db.AutoMigrate(&auth.User{}, &post.Post{})
+	if err != nil {
+		log.Fatal("Failed to migrate tables:", err)
+	}
+
+	log.Println("Database connected & migrated successfully")
 	return db
 }
