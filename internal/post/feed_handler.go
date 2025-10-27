@@ -7,10 +7,11 @@ import (
 
 // FeedItem untuk response join User + Post
 type FeedItem struct {
-	ID        uint   `json:"id"`
-	Username  string `json:"username"`
-	Content   string `json:"content"`
-	CreatedAt string `json:"created_at"`
+	ID        	uint   `json:"id"`
+	Username  	string `json:"username"`
+	Content   	string `json:"content"`
+	CreatedAt 	string `json:"created_at"`
+	Likes 		int64 	`json:"likes"`
 }
 
 // RegisterFeedRoutes gabungkan post + user info
@@ -21,9 +22,12 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB) {
 		var results []FeedItem
 
 		query := `
-			SELECT p.id, u.username, p.content, p.created_at
+			SELECT p.id, u.username, p.content, p.created_at,
+				COUNT(l.id) AS likes
 			FROM posts p
 			JOIN users u ON u.id = p.user_id
+			LEFT JOIN likes l ON l.post_id = p.id
+			GROUP BY p.id, u.username, p.content, p.created_at
 			ORDER BY p.created_at DESC
 			LIMIT 50
 		`

@@ -16,17 +16,19 @@ func main() {
 	_ = godotenv.Load()
 
 	app := fiber.New()
-
 	database := db.ConnectDB()
 	authSvc := auth.NewAuthService(database)
 
 	auth.RegisterRoutes(app, database, authSvc)
 	user.RegisterRoutes(app, database)
+	user.RegisterProfileRoutes(app, database)
 	post.RegisterRoutes(app, database, authSvc)
+	post.RegisterLikeRoutes(app, database, authSvc)
+	post.RegisterCommentRoutes(app, database, authSvc)
 	post.RegisterFeedRoutes(app, database)
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Welcome to Unbound API v0.3 (Feed)"})
+		return c.JSON(fiber.Map{"message": "Welcome to Unbound API v0.4 (Profile)"})
 	})
 
 	log.Fatal(app.Listen(":8080"))

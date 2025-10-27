@@ -26,7 +26,7 @@ func ConnectDB() *gorm.DB {
 		log.Fatal("Failed to connect to DB:", err)
 	}
 
-	err = db.AutoMigrate(&auth.User{}, &post.Post{})
+	err = db.AutoMigrate(&auth.User{}, &post.Post{}, &post.Like{}, &post.Comment{})
 	if err != nil {
 		log.Fatal("Failed to migrate tables:", err)
 	}
