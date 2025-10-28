@@ -27,7 +27,7 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `GET` | `/posts/:id/likes` | Hitung total likes |
 | `POST` | `/posts/:id/comments` | Tambah komentar ke post |
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
-
+| `POST` | `/posts/users/:id/follow` | Follow / Unfollow users |
 ---
 
 ## 🧱 Struktur
