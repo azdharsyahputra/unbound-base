@@ -12,6 +12,7 @@ import (
 	"unbound/internal/post"
 	"unbound/internal/search"
 	"unbound/internal/user"
+	"unbound/internal/notification"
 )
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 	search.RegisterSearchRoutes(app, database)
 	post.RegisterEditRoutes(app, database, authSvc)
 	post.RegisterCommentEditRoutes(app, database, authSvc)
+	notification.RegisterRoutes(app, database, authSvc)
 
 
 	app.Get("/", func(c *fiber.Ctx) error {

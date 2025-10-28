@@ -1,19 +1,19 @@
 package post
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"unbound/internal/auth"
 	"unbound/internal/common/middleware"
 	"unbound/internal/common/utils"
+	"unbound/internal/notification"
 )
 
-
-// RegisterLikeRoutes handles /posts/:id/like and /posts/:id/likes
 func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
-	// POST /posts/:id/like → toggle like/unlike
 	r.Post("/:id/like", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		userID, ok := c.Locals("userID").(uint)
@@ -39,10 +39,30 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to like")
 		}
 
+		var postOwner struct {
+			ID       uint
+			Username string
+		}
+		if err := db.Raw(`
+			SELECT p.user_id AS id, u.username 
+			FROM posts p 
+			JOIN users u ON u.id = p.user_id 
+			WHERE p.id = ?
+		`, postID).Scan(&postOwner).Error; err == nil && postOwner.ID != userID {
+			notif := notification.Notification{
+				UserID:  postOwner.ID,
+				ActorID: userID,
+				Type:    "like",
+				PostID:  utils.ToUintPtr(postID),
+				Message: fmt.Sprintf("%s menyukai postinganmu ❤️", postOwner.Username),
+			}
+			db.Create(&notif)
+		}
+		// ==============================================
+
 		return c.JSON(fiber.Map{"liked": true})
 	})
 
-	// GET /posts/:id/likes → total like
 	r.Get("/:id/likes", func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		var count int64

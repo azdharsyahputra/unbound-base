@@ -1,13 +1,15 @@
 package post
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"unbound/internal/auth"
 	"unbound/internal/common/middleware"
 	"unbound/internal/common/utils"
+	"unbound/internal/notification"
 )
-
 
 // RegisterCommentRoutes handles /posts/:id/comments
 func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
@@ -37,6 +39,28 @@ func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthServic
 		if err := db.Create(&comment).Error; err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to create comment")
 		}
+
+		// ===== 🔔 Buat notifikasi ke pemilik post =====
+		var postOwner struct {
+			ID       uint
+			Username string
+		}
+		if err := db.Raw(`
+			SELECT p.user_id AS id, u.username 
+			FROM posts p 
+			JOIN users u ON u.id = p.user_id 
+			WHERE p.id = ?
+		`, postID).Scan(&postOwner).Error; err == nil && postOwner.ID != userID {
+			notif := notification.Notification{
+				UserID:  postOwner.ID,          // penerima notif
+				ActorID: userID,                // pelaku komentar
+				Type:    "comment",
+				PostID:  utils.ToUintPtr(postID),
+				Message: fmt.Sprintf("%s mengomentari postinganmu 💬", postOwner.Username),
+			}
+			db.Create(&notif)
+		}
+		// ==============================================
 
 		return c.Status(fiber.StatusCreated).JSON(comment)
 	})

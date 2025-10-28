@@ -1,10 +1,13 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"unbound/internal/auth"
 	"unbound/internal/common/middleware"
+	"unbound/internal/notification"
 )
 
 // RegisterFollowRoutes handles follow system
@@ -48,6 +51,18 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		if err := db.Create(&newFollow).Error; err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to follow")
 		}
+
+		// ===== 🔔 Buat notifikasi ke user yang di-follow =====
+		if target.ID != userID {
+			notif := notification.Notification{
+				UserID:  target.ID,     // penerima notif
+				ActorID: userID,        // pelaku follow
+				Type:    "follow",
+				Message: fmt.Sprintf("Kamu mendapatkan pengikut baru 👥"),
+			}
+			db.Create(&notif)
+		}
+		// =====================================================
 
 		return c.JSON(fiber.Map{"following": true})
 	})

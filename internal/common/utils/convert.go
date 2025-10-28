@@ -7,3 +7,7 @@ func ToUint(s string) uint {
 	fmt.Sscanf(s, "%d", &id)
 	return id
 }
+func ToUintPtr(s string) *uint {
+	u := ToUint(s)
+	return &u
+}
