@@ -10,6 +10,7 @@ import (
 	"unbound/internal/common/db"
 	"unbound/internal/post"
 	"unbound/internal/user"
+	"unbound/internal/search"
 )
 
 func main() {
@@ -27,6 +28,7 @@ func main() {
 	post.RegisterLikeRoutes(app, database, authSvc)
 	post.RegisterCommentRoutes(app, database, authSvc)
 	post.RegisterFeedRoutes(app, database, authSvc)
+	search.RegisterSearchRoutes(app, database)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "Welcome to Unbound API v0.4 (Profile)"})

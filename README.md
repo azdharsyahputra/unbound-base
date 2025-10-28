@@ -33,6 +33,7 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `POST` | `/posts/:id/comments` | Tambah komentar ke post |
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
 | `DELETE` | `/posts/:post_id/comments/:id` | Hapus komentar milik sendiri |
+| `POST` | `/search?query=` | Pencarian beserta filter by user,post,oldes/newest |
 ---
 
 ## 🧱 Struktur
