@@ -16,12 +16,13 @@ func main() {
 	_ = godotenv.Load()
 
 	app := fiber.New()
-	database := db.ConnectDB()
+	database := db.Connect()
 	authSvc := auth.NewAuthService(database)
 
 	auth.RegisterRoutes(app, database, authSvc)
 	user.RegisterRoutes(app, database)
 	user.RegisterProfileRoutes(app, database)
+	user.RegisterFollowRoutes(app, database, authSvc)
 	post.RegisterRoutes(app, database, authSvc)
 	post.RegisterLikeRoutes(app, database, authSvc)
 	post.RegisterCommentRoutes(app, database, authSvc)
