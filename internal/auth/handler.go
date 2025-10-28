@@ -8,6 +8,7 @@ import (
 func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 	r := app.Group("/auth")
 
+	// ==================== REGISTER ====================
 	r.Post("/register", func(c *fiber.Ctx) error {
 		var req RegisterReq
 		if err := c.BodyParser(&req); err != nil {
@@ -24,15 +25,66 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 		})
 	})
 
+	// ==================== LOGIN ====================
 	r.Post("/login", func(c *fiber.Ctx) error {
 		var req LoginReq
 		if err := c.BodyParser(&req); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "invalid body")
 		}
+
 		tok, err := svc.Login(req)
 		if err != nil {
 			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 		}
-		return c.JSON(tok)
+
+		return c.JSON(fiber.Map{
+			"success":        true,
+			"access_token":   tok.AccessToken,
+			"refresh_token":  tok.RefreshToken,
+			"token_type":     "Bearer",
+			"expires_in_sec": 86400, // 1 hari
+		})
+	})
+
+	// ==================== REFRESH TOKEN ====================
+	r.Post("/refresh", func(c *fiber.Ctx) error {
+		var body struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+		}
+
+		tok, err := svc.RefreshAccess(body.RefreshToken)
+		if err != nil {
+			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		}
+
+		return c.JSON(fiber.Map{
+			"success":        true,
+			"access_token":   tok.AccessToken,
+			"refresh_token":  tok.RefreshToken,
+			"token_type":     "Bearer",
+			"expires_in_sec": 86400,
+		})
+	})
+
+	// ==================== LOGOUT ====================
+	r.Post("/logout", func(c *fiber.Ctx) error {
+		var body struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.BodyParser(&body); err != nil || body.RefreshToken == "" {
+			return fiber.NewError(fiber.StatusBadRequest, "refresh_token required")
+		}
+
+		if err := svc.DB.Where("token = ?", body.RefreshToken).Delete(&RefreshToken{}).Error; err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "failed to logout")
+		}
+
+		return c.JSON(fiber.Map{
+			"success": true,
+			"message": "Logged out successfully",
+		})
 	})
 }

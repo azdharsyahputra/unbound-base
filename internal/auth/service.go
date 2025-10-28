@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"os"
 	"strconv"
@@ -36,9 +38,11 @@ type LoginReq struct {
 }
 
 type TokenResp struct {
-	Token string `json:"token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
+// ========================== REGISTER ==========================
 func (s *AuthService) Register(input RegisterReq) (*User, error) {
 	if input.Username == "" || input.Email == "" || input.Password == "" {
 		return nil, errors.New("username, email, and password are required")
@@ -67,6 +71,7 @@ func (s *AuthService) Register(input RegisterReq) (*User, error) {
 	return u, nil
 }
 
+// ========================== LOGIN ==========================
 func (s *AuthService) Login(input LoginReq) (*TokenResp, error) {
 	var u User
 	if err := s.DB.Where("email = ?", input.Email).First(&u).Error; err != nil {
@@ -80,22 +85,56 @@ func (s *AuthService) Login(input LoginReq) (*TokenResp, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	claims := jwt.RegisteredClaims{
-		Subject:   strconv.FormatUint(uint64(u.ID), 10), // sub = userID
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		Issuer:    "unbound",
-	}
-
-	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := tok.SignedString(s.JWTSecret)
+	accessToken, err := s.GenerateJWT(u.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &TokenResp{Token: ss}, nil
+	refreshToken, err := s.GenerateRefreshToken(u.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenResp{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
+// ========================== JWT TOKEN ==========================
+func (s *AuthService) GenerateJWT(userID uint) (string, error) {
+	claims := jwt.RegisteredClaims{
+		Subject:   strconv.FormatUint(uint64(userID), 10),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 1 hari
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    "unbound",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(s.JWTSecret)
+}
+
+// ========================== REFRESH TOKEN ==========================
+func (s *AuthService) GenerateRefreshToken(userID uint) (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	token := hex.EncodeToString(b)
+	expiry := time.Now().Add(7 * 24 * time.Hour)
+
+	rt := RefreshToken{
+		UserID:    userID,
+		Token:     token,
+		ExpiresAt: expiry,
+	}
+	if err := s.DB.Create(&rt).Error; err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+// ========================== PARSE TOKEN ==========================
 func (s *AuthService) ParseToken(tokenStr string) (uint, error) {
 	tok, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return s.JWTSecret, nil
@@ -112,4 +151,32 @@ func (s *AuthService) ParseToken(tokenStr string) (uint, error) {
 		return uint(id64), nil
 	}
 	return 0, errors.New("invalid token")
+}
+
+// ========================== LOGOUT ==========================
+func (s *AuthService) Logout(refreshToken string) error {
+	return s.DB.Where("token = ?", refreshToken).Delete(&RefreshToken{}).Error
+}
+
+// ========================== REFRESH ACCESS ==========================
+func (s *AuthService) RefreshAccess(refreshToken string) (*TokenResp, error) {
+	var rt RefreshToken
+	if err := s.DB.Where("token = ?", refreshToken).First(&rt).Error; err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	if time.Now().After(rt.ExpiresAt) {
+		s.DB.Delete(&rt)
+		return nil, errors.New("refresh token expired")
+	}
+
+	newAccess, err := s.GenerateJWT(rt.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenResp{
+		AccessToken:  newAccess,
+		RefreshToken: refreshToken,
+	}, nil
 }

@@ -36,6 +36,7 @@ func Connect() *gorm.DB {
 		&post.Like{},
 		&post.Comment{},
 		&user.Follow{},
+		&auth.RefreshToken{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Migration failed: %v", err)

@@ -1,4 +1,4 @@
-# 🌀 Unbound Base — Barebone Backend
+# 🌀 Unbound Base — Barebone Backend (V1.0)
 
 **Unbound Base** adalah *skeleton backend* dari proyek sosial media terdistribusi **Unbound**, dibangun dengan **Go + Fiber + PostgreSQL**.  
 Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi microservices.
@@ -19,11 +19,13 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | Method | Endpoint | Deskripsi |
 |:--|:--|:--|
 | `POST` | `/auth/register` | Register user baru |
-| `POST` | `/auth/login` | Login dan dapatkan JWT |
+| `POST` | `/auth/login` | Login dan dapatkan access_token + refresh_token |
+| `POST` | `/auth/refresh` | Memperbarui access_token menggunakan refresh_token |
+| `POST` | `/auth/logout` | Logout user dan hapus refresh_token dari database |
 | `POST` | `/posts` | Buat posting (auth) |
 | `PUT` | `/posts/:id` | Edit posting milik sendiri |
 | `DELETE` | `/posts/:id` | Hapus posting milik sendiri |
-| `GET` | `/feed` | Lihat timeline publik |
+| `GET` | `/feed` | Lihat timeline publik (support limit, offset, sort) |
 | `GET` | `/feed/following` | Lihat timeline dari user yang di-follow |
 | `GET` | `/users/:username` | Lihat profil dan post user |
 | `POST` | `/users/:username/follow` | Follow / Unfollow user |
@@ -36,6 +38,8 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
 | `DELETE` | `/posts/:post_id/comments/:id` | Hapus komentar milik sendiri |
 | `POST` | `/search?query=` | Pencarian beserta filter by user,post,oldest/newest |
+| `GET` | `/notifications` | (Planned) Ambil notifikasi baru |
+| `POST` | `/notifications/read` | (Planned) Tandai notifikasi sebagai dibaca |
 
 ---
 
@@ -44,7 +48,7 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 unbound/
 ├── cmd/server/           # Entry point
 ├── internal/
-│   ├── auth/             # Register, login, JWT
+│   ├── auth/             # Register, login, JWT, refresh, logout
 │   ├── post/             # Post, like, comment, feed, edit
 │   ├── user/             # Profile & follow system
 │   ├── search/           # Pencarian user & post
