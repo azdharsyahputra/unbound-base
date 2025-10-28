@@ -21,6 +21,7 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `POST` | `/auth/register` | Register user baru |
 | `POST` | `/auth/login` | Login dan dapatkan JWT |
 | `POST` | `/posts` | Buat posting (auth) |
+| `PUT` | `/posts/:id` | Edit posting milik sendiri |
 | `DELETE` | `/posts/:id` | Hapus posting milik sendiri |
 | `GET` | `/feed` | Lihat timeline publik |
 | `GET` | `/feed/following` | Lihat timeline dari user yang di-follow |
@@ -31,9 +32,11 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `POST` | `/posts/:id/like` | Like / Unlike post |
 | `GET` | `/posts/:id/likes` | Hitung total likes |
 | `POST` | `/posts/:id/comments` | Tambah komentar ke post |
+| `PUT` | `/posts/:post_id/comments/:id` | Edit komentar milik sendiri |
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
 | `DELETE` | `/posts/:post_id/comments/:id` | Hapus komentar milik sendiri |
-| `POST` | `/search?query=` | Pencarian beserta filter by user,post,oldes/newest |
+| `POST` | `/search?query=` | Pencarian beserta filter by user,post,oldest/newest |
+
 ---
 
 ## 🧱 Struktur
@@ -42,8 +45,9 @@ unbound/
 ├── cmd/server/           # Entry point
 ├── internal/
 │   ├── auth/             # Register, login, JWT
-│   ├── post/             # Post, like, comment, feed
-│   ├── user/             # Profile endpoint
+│   ├── post/             # Post, like, comment, feed, edit
+│   ├── user/             # Profile & follow system
+│   ├── search/           # Pencarian user & post
 │   └── common/           # DB, middleware, utils
 └── go.mod
 ```

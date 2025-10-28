@@ -8,15 +8,19 @@ import (
 
 	"unbound/internal/auth"
 	"unbound/internal/common/db"
+	"unbound/internal/common/middleware"
 	"unbound/internal/post"
-	"unbound/internal/user"
 	"unbound/internal/search"
+	"unbound/internal/user"
 )
 
 func main() {
 	_ = godotenv.Load()
 
 	app := fiber.New()
+
+	app.Use(middleware.JSONResponseMiddleware)
+
 	database := db.Connect()
 	authSvc := auth.NewAuthService(database)
 
@@ -29,9 +33,17 @@ func main() {
 	post.RegisterCommentRoutes(app, database, authSvc)
 	post.RegisterFeedRoutes(app, database, authSvc)
 	search.RegisterSearchRoutes(app, database)
+	post.RegisterEditRoutes(app, database, authSvc)
+	post.RegisterCommentEditRoutes(app, database, authSvc)
+
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Welcome to Unbound API v0.4 (Profile)"})
+		return c.JSON(fiber.Map{
+			"success": true,
+			"data": fiber.Map{
+				"message": "Welcome to Unbound API v0.8",
+			},
+		})
 	})
 
 	log.Fatal(app.Listen(":8080"))

@@ -42,7 +42,7 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 
 		query := `
 			SELECT p.id, u.username, p.content, p.created_at,
-				COUNT(l.id) AS likes
+				COUNT(DISTINCT l.id) AS likes
 			FROM posts p
 			JOIN users u ON u.id = p.user_id
 			LEFT JOIN likes l ON l.post_id = p.id
@@ -92,7 +92,7 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 
 		query := `
 			SELECT p.id, u.username, p.content, p.created_at,
-				COUNT(l.id) AS likes
+				COUNT(DISTINCT l.id) AS likes
 			FROM posts p
 			JOIN users u ON u.id = p.user_id
 			LEFT JOIN likes l ON l.post_id = p.id
