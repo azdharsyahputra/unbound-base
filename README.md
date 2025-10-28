@@ -21,13 +21,18 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `POST` | `/auth/register` | Register user baru |
 | `POST` | `/auth/login` | Login dan dapatkan JWT |
 | `POST` | `/posts` | Buat posting (auth) |
+| `DELETE` | `/posts/:id` | Hapus posting milik sendiri |
 | `GET` | `/feed` | Lihat timeline publik |
+| `GET` | `/feed/following` | Lihat timeline dari user yang di-follow |
 | `GET` | `/users/:username` | Lihat profil dan post user |
+| `POST` | `/users/:username/follow` | Follow / Unfollow user |
+| `GET` | `/users/:username/followers` | Lihat siapa saja followers user |
+| `GET` | `/users/:username/following` | Lihat siapa saja yang di-follow user |
 | `POST` | `/posts/:id/like` | Like / Unlike post |
 | `GET` | `/posts/:id/likes` | Hitung total likes |
 | `POST` | `/posts/:id/comments` | Tambah komentar ke post |
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
-| `POST` | `/posts/users/:id/follow` | Follow / Unfollow users |
+| `DELETE` | `/posts/:post_id/comments/:id` | Hapus komentar milik sendiri |
 ---
 
 ## 🧱 Struktur

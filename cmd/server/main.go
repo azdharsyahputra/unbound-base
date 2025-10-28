@@ -26,7 +26,7 @@ func main() {
 	post.RegisterRoutes(app, database, authSvc)
 	post.RegisterLikeRoutes(app, database, authSvc)
 	post.RegisterCommentRoutes(app, database, authSvc)
-	post.RegisterFeedRoutes(app, database)
+	post.RegisterFeedRoutes(app, database, authSvc)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "Welcome to Unbound API v0.4 (Profile)"})
