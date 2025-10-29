@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/joho/godotenv"
 
 	"unbound/internal/auth"
@@ -13,6 +14,7 @@ import (
 	"unbound/internal/search"
 	"unbound/internal/user"
 	"unbound/internal/notification"
+	"unbound/internal/chat"
 )
 
 func main() {
@@ -22,9 +24,18 @@ func main() {
 
 	app.Use(middleware.JSONResponseMiddleware)
 
+	// ✅ Izinkan upgrade WebSocket
+	app.Use(func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next() // allow WebSocket upgrade
+		}
+		return c.Next()
+	})
+
 	database := db.Connect()
 	authSvc := auth.NewAuthService(database)
 
+	// ===== Register routes =====
 	auth.RegisterRoutes(app, database, authSvc)
 	user.RegisterRoutes(app, database)
 	user.RegisterProfileRoutes(app, database)
@@ -33,12 +44,13 @@ func main() {
 	post.RegisterLikeRoutes(app, database, authSvc)
 	post.RegisterCommentRoutes(app, database, authSvc)
 	post.RegisterFeedRoutes(app, database, authSvc)
-	search.RegisterSearchRoutes(app, database)
 	post.RegisterEditRoutes(app, database, authSvc)
 	post.RegisterCommentEditRoutes(app, database, authSvc)
+	search.RegisterSearchRoutes(app, database)
 	notification.RegisterRoutes(app, database, authSvc)
+	chat.RegisterChatRoutes(app, database, authSvc)
 
-
+	// Root endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
