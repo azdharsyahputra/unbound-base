@@ -22,11 +22,29 @@ type FeedItem struct {
 func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/feed")
 
-	// 🌍 Public Feed (semua post, dengan pagination + sorting)
-	r.Get("/", func(c *fiber.Ctx) error {
+	r.Get("/", GetPublicFeedHandler(db))
+	r.Get("/following", middleware.JWTProtected(authSvc), GetFollowingFeedHandler(db))
+}
+
+// ================================================================
+// HANDLERS
+// ================================================================
+
+// GetPublicFeedHandler godoc
+// @Summary Get public feed
+// @Description Mengambil semua postingan publik (dengan pagination & sorting)
+// @Tags Feed
+// @Produce json
+// @Param limit query int false "Limit jumlah post (default: 20)"
+// @Param offset query int false "Offset pagination (default: 0)"
+// @Param sort query string false "Urutan postingan (newest atau oldest)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /feed [get]
+func GetPublicFeedHandler(db *gorm.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		var results []FeedItem
 
-		// ambil query param pagination & sort
 		limit, _ := strconv.Atoi(c.Query("limit", "20"))
 		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		sortOrder := c.Query("sort", "newest")
@@ -65,10 +83,24 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 				"count":  len(results),
 			},
 		})
-	})
+	}
+}
 
-	// 👥 Following Feed (hanya user yg diikuti)
-	r.Get("/following", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
+// GetFollowingFeedHandler godoc
+// @Summary Get following feed
+// @Description Menampilkan postingan dari user yang diikuti (dan diri sendiri)
+// @Tags Feed
+// @Security BearerAuth
+// @Produce json
+// @Param limit query int false "Limit jumlah post (default: 20)"
+// @Param offset query int false "Offset pagination (default: 0)"
+// @Param sort query string false "Urutan postingan (newest atau oldest)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /feed/following [get]
+func GetFollowingFeedHandler(db *gorm.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("userID").(uint)
 		if !ok {
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid user context")
@@ -76,7 +108,6 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 
 		var results []FeedItem
 
-		// ambil query param pagination & sort
 		limit, _ := strconv.Atoi(c.Query("limit", "20"))
 		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		sortOrder := c.Query("sort", "newest")
@@ -119,5 +150,5 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 				"count":  len(results),
 			},
 		})
-	})
+	}
 }

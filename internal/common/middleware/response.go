@@ -1,15 +1,21 @@
 package middleware
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-// JSONResponseMiddleware memastikan semua response JSON konsisten
+// JSONResponseMiddleware memastikan semua response JSON konsisten,
+// kecuali untuk file statis seperti Swagger UI
 func JSONResponseMiddleware(c *fiber.Ctx) error {
+	// biarkan lewat kalau ini route swagger atau asset statis
+	if strings.HasPrefix(c.Path(), "/swagger") {
+		return c.Next()
+	}
+
 	// jalankan handler route dulu
 	err := c.Next()
-
-	// jika ada error dari handler → ubah ke format JSON standar
 	if err != nil {
 		code := fiber.StatusInternalServerError
 		msg := "internal server error"
@@ -26,12 +32,12 @@ func JSONResponseMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	// pastikan kalau response bukan JSON, ubah jadi format standar
+	// biarin aja kalau udah JSON
 	if string(c.Response().Header.ContentType()) == fiber.MIMEApplicationJSON {
-		return nil // udah JSON, biarin aja
+		return nil
 	}
 
-	// fallback untuk non-JSON response (misal string atau plain text)
+	// fallback buat non-JSON (misal text biasa)
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data":    string(c.Response().Body()),

@@ -1,0 +1,489 @@
+basePath: /
+definitions:
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  internal_auth.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  internal_auth.RegisterReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_post.Comment:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      postID:
+        type: integer
+      updatedAt:
+        type: string
+      userID:
+        type: integer
+    type: object
+  internal_post.CommentResponse:
+    properties:
+      content:
+        example: Mantap banget postingannya!
+        type: string
+      created_at:
+        example: "2025-10-29T09:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      username:
+        example: ajar_dev
+        type: string
+    type: object
+  internal_post.CreateCommentRequest:
+    properties:
+      content:
+        example: Komentar yang menarik banget!
+        type: string
+    type: object
+  internal_post.UpdateCommentRequest:
+    properties:
+      content:
+        example: Updated comment content
+        type: string
+    type: object
+  internal_post.UpdatePostRequest:
+    properties:
+      content:
+        example: Updated caption from Unbound!
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: unbound@swagger.io
+    name: API Support
+  description: REST API backend for Unbound microservice social platform.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Unbound API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login dengan email dan password untuk mendapatkan token
+      parameters:
+      - description: User credentials
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Menghapus refresh_token dari database (invalidate session)
+      parameters:
+      - description: Refresh token
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Mengambil access_token baru menggunakan refresh_token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Membuat akun baru di Unbound
+      parameters:
+      - description: User data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register new user
+      tags:
+      - Auth
+  /feed:
+    get:
+      description: Mengambil semua postingan publik (dengan pagination & sorting)
+      parameters:
+      - description: 'Limit jumlah post (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Urutan postingan (newest atau oldest)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get public feed
+      tags:
+      - Feed
+  /feed/following:
+    get:
+      description: Menampilkan postingan dari user yang diikuti (dan diri sendiri)
+      parameters:
+      - description: 'Limit jumlah post (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: Urutan postingan (newest atau oldest)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get following feed
+      tags:
+      - Feed
+  /notifications:
+    get:
+      description: Mengambil semua notifikasi user yang sedang login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all notifications of the current user
+      tags:
+      - Notifications
+  /notifications/read:
+    post:
+      description: Menandai semua notifikasi user sebagai sudah dibaca
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark all notifications as read
+      tags:
+      - Notifications
+  /posts/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah konten postingan milik user yang sedang login
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated post content
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_post.UpdatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update an existing post
+      tags:
+      - Posts
+  /posts/{id}/comments:
+    get:
+      description: Mengambil semua komentar dari sebuah postingan
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_post.CommentResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all comments for a post
+      tags:
+      - Posts
+    post:
+      consumes:
+      - application/json
+      description: Membuat komentar baru pada postingan tertentu (hanya untuk user
+        login)
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Comment content
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_post.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_post.Comment'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a comment on a post
+      tags:
+      - Posts
+  /posts/{post_id}/comments/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah isi komentar milik user yang sedang login
+      parameters:
+      - description: Post ID
+        in: path
+        name: post_id
+        required: true
+        type: integer
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated comment content
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/internal_post.UpdateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update comment content
+      tags:
+      - Posts
+swagger: "2.0"

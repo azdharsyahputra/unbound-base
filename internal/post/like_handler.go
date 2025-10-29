@@ -11,9 +11,23 @@ import (
 	"unbound/internal/notification"
 )
 
+// RegisterLikeRoutes godoc
+// @Summary Like & Unlike system
+// @Tags Likes
 func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
+	// LikePostHandler godoc
+	// @Summary Like or Unlike a post
+	// @Description Toggle like pada postingan (jika sudah like maka unlike)
+	// @Tags Likes
+	// @Security BearerAuth
+	// @Param id path int true "Post ID"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 401 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /posts/{id}/like [post]
 	r.Post("/:id/like", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		userID, ok := c.Locals("userID").(uint)
@@ -58,11 +72,19 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 			}
 			db.Create(&notif)
 		}
-		// ==============================================
 
 		return c.JSON(fiber.Map{"liked": true})
 	})
 
+	// GetLikesHandler godoc
+	// @Summary Get like count
+	// @Description Mengambil jumlah like pada postingan
+	// @Tags Likes
+	// @Param id path int true "Post ID"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /posts/{id}/likes [get]
 	r.Get("/:id/likes", func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		var count int64

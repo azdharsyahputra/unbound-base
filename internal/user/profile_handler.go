@@ -7,10 +7,10 @@ import (
 
 // ProfileResponse untuk hasil gabungan user + posts
 type ProfileResponse struct {
-	ID       uint        `json:"id"`
-	Username string      `json:"username"`
-	Email    string      `json:"email"`
-	Posts    []UserPost  `json:"posts"`
+	ID       uint       `json:"id"`
+	Username string     `json:"username"`
+	Email    string     `json:"email"`
+	Posts    []UserPost `json:"posts"`
 }
 
 type UserPost struct {
@@ -19,10 +19,23 @@ type UserPost struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// RegisterProfileRoutes endpoint /users/:username
+// RegisterProfileRoutes godoc
+// @Summary User profile
+// @Description Endpoint untuk melihat profil user beserta postingannya
+// @Tags Users
 func RegisterProfileRoutes(app *fiber.App, db *gorm.DB) {
 	r := app.Group("/users")
 
+	// GetUserProfile godoc
+	// @Summary Get user profile and posts
+	// @Description Mengambil data user berdasarkan username, beserta daftar postingannya
+	// @Tags Users
+	// @Param username path string true "Username target"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 404 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /users/{username} [get]
 	r.Get("/:username", func(c *fiber.Ctx) error {
 		username := c.Params("username")
 

@@ -12,9 +12,25 @@ type SearchResult struct {
 	CreatedAt string `json:"created_at"`
 }
 
+// RegisterSearchRoutes godoc
+// @Summary Search system
+// @Description Endpoint untuk mencari user atau post berdasarkan keyword
+// @Tags Search
 func RegisterSearchRoutes(app *fiber.App, db *gorm.DB) {
 	r := app.Group("/search")
 
+	// SearchHandler godoc
+	// @Summary Search users or posts
+	// @Description Mencari user atau post berdasarkan query string
+	// @Tags Search
+	// @Produce json
+	// @Param query query string true "Kata kunci pencarian"
+	// @Param type query string false "Tipe filter (user/post)"
+	// @Param sort query string false "Urutan hasil untuk post (newest/oldest)"
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 400 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /search [get]
 	r.Get("/", func(c *fiber.Ctx) error {
 		query := c.Query("query")
 		filterType := c.Query("type")
@@ -68,6 +84,10 @@ func RegisterSearchRoutes(app *fiber.App, db *gorm.DB) {
 			}
 		}
 
-		return c.JSON(results)
+		return c.JSON(fiber.Map{
+			"success": true,
+			"count":   len(results),
+			"data":    results,
+		})
 	})
 }

@@ -10,11 +10,26 @@ import (
 	"unbound/internal/notification"
 )
 
-// RegisterFollowRoutes handles follow system
+// RegisterFollowRoutes godoc
+// @Summary Follow system
+// @Description Endpoint untuk follow, unfollow, dan melihat followers/following
+// @Tags Users
 func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/users")
 
-	// POST /users/:username/follow → follow/unfollow user
+	// FollowUser godoc
+	// @Summary Follow or unfollow user
+	// @Description Toggle follow ke user lain (jika sudah follow → unfollow)
+	// @Tags Users
+	// @Security BearerAuth
+	// @Param username path string true "Username target"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 400 {object} map[string]interface{}
+	// @Failure 401 {object} map[string]interface{}
+	// @Failure 404 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /users/{username}/follow [post]
 	r.Post("/:username/follow", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		targetUsername := c.Params("username")
 		userID, ok := c.Locals("userID").(uint)
@@ -52,22 +67,30 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to follow")
 		}
 
-		// ===== 🔔 Buat notifikasi ke user yang di-follow =====
+		// 🔔 Notifikasi ke user yang di-follow
 		if target.ID != userID {
 			notif := notification.Notification{
-				UserID:  target.ID,     // penerima notif
-				ActorID: userID,        // pelaku follow
+				UserID:  target.ID,
+				ActorID: userID,
 				Type:    "follow",
 				Message: fmt.Sprintf("Kamu mendapatkan pengikut baru 👥"),
 			}
 			db.Create(&notif)
 		}
-		// =====================================================
 
 		return c.JSON(fiber.Map{"following": true})
 	})
 
-	// GET /users/:username/followers
+	// GetFollowers godoc
+	// @Summary Get followers of user
+	// @Description Menampilkan semua user yang mengikuti user tertentu
+	// @Tags Users
+	// @Param username path string true "Username target"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 404 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /users/{username}/followers [get]
 	r.Get("/:username/followers", func(c *fiber.Ctx) error {
 		username := c.Params("username")
 
@@ -90,10 +113,23 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to fetch followers")
 		}
 
-		return c.JSON(followers)
+		return c.JSON(fiber.Map{
+			"success":   true,
+			"followers": followers,
+			"count":     len(followers),
+		})
 	})
 
-	// GET /users/:username/following
+	// GetFollowing godoc
+	// @Summary Get following list
+	// @Description Menampilkan semua user yang diikuti oleh user tertentu
+	// @Tags Users
+	// @Param username path string true "Username target"
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 404 {object} map[string]interface{}
+	// @Failure 500 {object} map[string]interface{}
+	// @Router /users/{username}/following [get]
 	r.Get("/:username/following", func(c *fiber.Ctx) error {
 		username := c.Params("username")
 
@@ -116,6 +152,10 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to fetch following")
 		}
 
-		return c.JSON(following)
+		return c.JSON(fiber.Map{
+			"success":   true,
+			"following": following,
+			"count":     len(following),
+		})
 	})
 }
