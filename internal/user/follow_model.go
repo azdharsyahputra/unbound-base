@@ -4,6 +4,6 @@ import "gorm.io/gorm"
 
 type Follow struct {
 	gorm.Model
-	FollowerID  uint `gorm:"not null"` // siapa yang mengikuti
-	FollowingID uint `gorm:"not null"` // siapa yang diikuti
+	FollowerID  uint `gorm:"not null"`
+	FollowingID uint `gorm:"not null"`
 }

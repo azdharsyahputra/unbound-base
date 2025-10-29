@@ -12,10 +12,9 @@ import (
 	"unbound/internal/post"
 	"unbound/internal/user"
 	"unbound/internal/notification"
-	"unbound/internal/chat" // ✅ Tambahkan ini
+	"unbound/internal/chat"
 )
 
-// Connect membuka koneksi ke PostgreSQL dan menjalankan migrasi model
 func Connect() *gorm.DB {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -31,7 +30,6 @@ func Connect() *gorm.DB {
 		log.Fatalf("❌ Failed to connect to database: %v", err)
 	}
 
-	// Migrasi semua tabel utama (termasuk Chat & Message)
 	err = db.AutoMigrate(
 		&auth.User{},
 		&post.Post{},
@@ -40,8 +38,8 @@ func Connect() *gorm.DB {
 		&user.Follow{},
 		&auth.RefreshToken{},
 		&notification.Notification{},
-		&chat.Chat{},     // ✅ Tambahkan ini
-		&chat.Message{},  // ✅ Dan ini
+		&chat.Chat{},
+		&chat.Message{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Migration failed: %v", err)

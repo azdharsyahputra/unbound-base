@@ -14,7 +14,6 @@ type createPostReq struct {
 func RegisterRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
-	// GET /posts → list all posts
 	r.Get("/", func(c *fiber.Ctx) error {
 		var posts []Post
 		if err := db.Order("id DESC").Limit(100).Find(&posts).Error; err != nil {
@@ -23,7 +22,6 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 		return c.JSON(posts)
 	})
 
-	// POST /posts → create new post
 	r.Post("/", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		var req createPostReq
 		if err := c.BodyParser(&req); err != nil || req.Content == "" {
@@ -44,7 +42,6 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 		return c.Status(fiber.StatusCreated).JSON(p)
 	})
 
-	// DELETE /posts/:id → delete own post
 	r.Delete("/:id", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		userID, ok := c.Locals("userID").(uint)

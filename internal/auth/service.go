@@ -42,7 +42,6 @@ type TokenResp struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-// ========================== REGISTER ==========================
 func (s *AuthService) Register(input RegisterReq) (*User, error) {
 	if input.Username == "" || input.Email == "" || input.Password == "" {
 		return nil, errors.New("username, email, and password are required")
@@ -71,7 +70,6 @@ func (s *AuthService) Register(input RegisterReq) (*User, error) {
 	return u, nil
 }
 
-// ========================== LOGIN ==========================
 func (s *AuthService) Login(input LoginReq) (*TokenResp, error) {
 	var u User
 	if err := s.DB.Where("email = ?", input.Email).First(&u).Error; err != nil {
@@ -101,11 +99,10 @@ func (s *AuthService) Login(input LoginReq) (*TokenResp, error) {
 	}, nil
 }
 
-// ========================== JWT TOKEN ==========================
 func (s *AuthService) GenerateJWT(userID uint) (string, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   strconv.FormatUint(uint64(userID), 10),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 1 hari
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "unbound",
 	}
@@ -114,7 +111,6 @@ func (s *AuthService) GenerateJWT(userID uint) (string, error) {
 	return token.SignedString(s.JWTSecret)
 }
 
-// ========================== REFRESH TOKEN ==========================
 func (s *AuthService) GenerateRefreshToken(userID uint) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -134,7 +130,6 @@ func (s *AuthService) GenerateRefreshToken(userID uint) (string, error) {
 	return token, nil
 }
 
-// ========================== PARSE TOKEN ==========================
 func (s *AuthService) ParseToken(tokenStr string) (uint, error) {
 	tok, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return s.JWTSecret, nil
@@ -153,12 +148,10 @@ func (s *AuthService) ParseToken(tokenStr string) (uint, error) {
 	return 0, errors.New("invalid token")
 }
 
-// ========================== LOGOUT ==========================
 func (s *AuthService) Logout(refreshToken string) error {
 	return s.DB.Where("token = ?", refreshToken).Delete(&RefreshToken{}).Error
 }
 
-// ========================== REFRESH ACCESS ==========================
 func (s *AuthService) RefreshAccess(refreshToken string) (*TokenResp, error) {
 	var rt RefreshToken
 	if err := s.DB.Where("token = ?", refreshToken).First(&rt).Error; err != nil {

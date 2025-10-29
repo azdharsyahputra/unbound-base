@@ -17,10 +17,6 @@ func NewChatHandler(s *ChatService, hub *WebSocketHub) *ChatHandler {
 	return &ChatHandler{Service: s, Hub: hub}
 }
 
-// =======================
-// GET /chats/:user_id
-// Ambil atau buat chat antara user login dan target user
-// =======================
 func (h *ChatHandler) GetOrCreateChat(c *fiber.Ctx) error {
 	var userID uint
 	if v := c.Locals("userID"); v != nil {
@@ -45,10 +41,6 @@ func (h *ChatHandler) GetOrCreateChat(c *fiber.Ctx) error {
 	return c.JSON(chat)
 }
 
-// =======================
-// GET /chats/:chat_id/messages
-// Ambil semua pesan di chat tertentu
-// =======================
 func (h *ChatHandler) GetMessages(c *fiber.Ctx) error {
 	chatID, err := strconv.Atoi(c.Params("chat_id"))
 	if err != nil {
@@ -63,10 +55,6 @@ func (h *ChatHandler) GetMessages(c *fiber.Ctx) error {
 	return c.JSON(messages)
 }
 
-// =======================
-// POST /chats/:chat_id/messages
-// Kirim pesan baru
-// =======================
 func (h *ChatHandler) SendMessage(c *fiber.Ctx) error {
 	var userID uint
 	if v := c.Locals("userID"); v != nil {
@@ -99,10 +87,6 @@ func (h *ChatHandler) SendMessage(c *fiber.Ctx) error {
 	return c.JSON(msg)
 }
 
-// =======================
-// PUT /chats/:chat_id/read
-// Tandai semua pesan lawan bicara sebagai 'read'
-// =======================
 func (h *ChatHandler) MarkAsRead(c *fiber.Ctx) error {
 	var userID uint
 	if v := c.Locals("userID"); v != nil {
@@ -123,7 +107,6 @@ func (h *ChatHandler) MarkAsRead(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// 🔥 Broadcast ke semua client WebSocket di chat ini
 	h.Hub.BroadcastEvent(uint(chatID), BroadcastPayload{
 		Type:      "status_update",
 		ChatID:    uint(chatID),

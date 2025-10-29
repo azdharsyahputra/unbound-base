@@ -11,11 +11,9 @@ import (
 	"unbound/internal/notification"
 )
 
-// RegisterFollowRoutes handles follow system
 func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/users")
 
-	// POST /users/:username/follow → follow/unfollow user
 	r.Post("/:username/follow", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		targetUsername := c.Params("username")
 		userID, ok := c.Locals("userID").(uint)
@@ -36,7 +34,6 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		if err := db.Where("follower_id = ? AND following_id = ?", userID, target.ID).
 			Limit(1).Find(&existing).Error; err == nil && existing.ID != 0 {
 
-			// Sudah follow → unfollow
 			if err := db.Delete(&existing).Error; err != nil {
 				return fiber.NewError(fiber.StatusInternalServerError, "failed to unfollow")
 			}
@@ -51,13 +48,12 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to follow")
 		}
 
-		// 🔔 Kirim notifikasi follow
 		if target.ID != userID {
 			notif := notification.Notification{
 				UserID:  target.ID,
 				ActorID: userID,
 				Type:    "follow",
-				Message: fmt.Sprintf("Kamu mendapatkan pengikut baru 👥"),
+				Message: fmt.Sprintf("Kamu mendapatkan pengikut baru"),
 			}
 			db.Create(&notif)
 		}
@@ -65,7 +61,6 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		return c.JSON(fiber.Map{"following": true})
 	})
 
-	// GET /users/:username/followers
 	r.Get("/:username/followers", func(c *fiber.Ctx) error {
 		username := c.Params("username")
 
@@ -91,7 +86,6 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		return c.JSON(followers)
 	})
 
-	// GET /users/:username/following
 	r.Get("/:username/following", func(c *fiber.Ctx) error {
 		username := c.Params("username")
 

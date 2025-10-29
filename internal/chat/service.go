@@ -17,9 +17,6 @@ func NewChatService(db *gorm.DB) *ChatService {
 	return &ChatService{DB: db}
 }
 
-// =======================
-// Get or Create Chat
-// =======================
 func (s *ChatService) GetOrCreateChat(user1ID, user2ID uint) (*Chat, error) {
 	var chat Chat
 	err := s.DB.
@@ -39,9 +36,6 @@ func (s *ChatService) GetOrCreateChat(user1ID, user2ID uint) (*Chat, error) {
 	return &chat, err
 }
 
-// =======================
-// Get Messages
-// =======================
 func (s *ChatService) GetMessages(chatID uint) ([]Message, error) {
 	var messages []Message
 	err := s.DB.
@@ -50,9 +44,7 @@ func (s *ChatService) GetMessages(chatID uint) ([]Message, error) {
 		Find(&messages).Error
 	return messages, err
 }
-// =======================
-// Send Message
-// =======================
+
 func (s *ChatService) SendMessage(chatID, senderID uint, content string) (*Message, error) {
 	msg := Message{
 		ChatID:   chatID,
@@ -62,12 +54,10 @@ func (s *ChatService) SendMessage(chatID, senderID uint, content string) (*Messa
 		IsRead:   false,
 	}
 
-	// Simpan pesan ke DB
 	if err := s.DB.Create(&msg).Error; err != nil {
 		return nil, err
 	}
 
-	// ✅ Buat notifikasi untuk penerima pesan
 	var chat Chat
 	if err := s.DB.First(&chat, chatID).Error; err == nil {
 		var targetUser uint
@@ -78,9 +68,9 @@ func (s *ChatService) SendMessage(chatID, senderID uint, content string) (*Messa
 		}
 
 		notif := notification.Notification{
-			UserID:  targetUser, // penerima pesan
-			ActorID: senderID,   // pengirim pesan
-			Type:    "message",  // jenis notif
+			UserID:  targetUser,
+			ActorID: senderID,
+			Type:    "message",
 			Message: fmt.Sprintf("Pesan baru dari user %d", senderID),
 			IsRead:  false,
 		}
@@ -93,10 +83,6 @@ func (s *ChatService) SendMessage(chatID, senderID uint, content string) (*Messa
 	return &msg, nil
 }
 
-
-// =======================
-// Mark Messages as Delivered
-// =======================
 func (s *ChatService) MarkMessagesAsDelivered(chatID, userID uint) error {
 	return s.DB.
 		Model(&Message{}).
@@ -104,9 +90,6 @@ func (s *ChatService) MarkMessagesAsDelivered(chatID, userID uint) error {
 		Update("status", "delivered").Error
 }
 
-// =======================
-// Mark Messages as Read
-// =======================
 func (s *ChatService) MarkMessagesAsRead(chatID, userID uint, t time.Time) error {
 	return s.DB.
 		Model(&Message{}).

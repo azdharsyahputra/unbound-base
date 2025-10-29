@@ -23,13 +23,11 @@ func WebSocketAuth(secret string) fiber.Handler {
 
 		claims := token.Claims.(jwt.MapClaims)
 
-		// ✅ Gunakan "sub" karena itulah field ID user di token Unbound
 		sub, ok := claims["sub"].(string)
 		if !ok {
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid subject claim")
 		}
 
-		// Konversi string ke uint
 		var userID uint
 		_, err = fmt.Sscan(sub, &userID)
 		if err != nil {

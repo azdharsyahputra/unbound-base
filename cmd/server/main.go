@@ -24,10 +24,9 @@ func main() {
 
 	app.Use(middleware.JSONResponseMiddleware)
 
-	// ✅ Izinkan upgrade WebSocket
 	app.Use(func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
-			return c.Next() // allow WebSocket upgrade
+			return c.Next()
 		}
 		return c.Next()
 	})
@@ -35,7 +34,6 @@ func main() {
 	database := db.Connect()
 	authSvc := auth.NewAuthService(database)
 
-	// ===== Register routes =====
 	auth.RegisterRoutes(app, database, authSvc)
 	user.RegisterRoutes(app, database)
 	user.RegisterProfileRoutes(app, database)
@@ -50,7 +48,6 @@ func main() {
 	notification.RegisterRoutes(app, database, authSvc)
 	chat.RegisterChatRoutes(app, database, authSvc)
 
-	// Root endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,

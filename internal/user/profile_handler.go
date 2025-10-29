@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ProfileResponse untuk hasil gabungan user + posts
 type ProfileResponse struct {
 	ID       uint        `json:"id"`
 	Username string      `json:"username"`
@@ -19,7 +18,6 @@ type UserPost struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// RegisterProfileRoutes endpoint /users/:username
 func RegisterProfileRoutes(app *fiber.App, db *gorm.DB) {
 	r := app.Group("/users")
 

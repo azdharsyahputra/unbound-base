@@ -9,7 +9,6 @@ import (
 	"unbound/internal/common/middleware"
 )
 
-// FeedItem untuk response join User + Post
 type FeedItem struct {
 	ID        uint   `json:"id"`
 	Username  string `json:"username"`
@@ -18,15 +17,12 @@ type FeedItem struct {
 	Likes     int64  `json:"likes"`
 }
 
-// RegisterFeedRoutes gabungkan post + user info
 func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/feed")
 
-	// 🌍 Public Feed (semua post, dengan pagination + sorting)
 	r.Get("/", func(c *fiber.Ctx) error {
 		var results []FeedItem
 
-		// ambil query param pagination & sort
 		limit, _ := strconv.Atoi(c.Query("limit", "20"))
 		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		sortOrder := c.Query("sort", "newest")
@@ -67,7 +63,6 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 		})
 	})
 
-	// 👥 Following Feed (hanya user yg diikuti)
 	r.Get("/following", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("userID").(uint)
 		if !ok {
@@ -76,7 +71,6 @@ func RegisterFeedRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 
 		var results []FeedItem
 
-		// ambil query param pagination & sort
 		limit, _ := strconv.Atoi(c.Query("limit", "20"))
 		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		sortOrder := c.Query("sort", "newest")

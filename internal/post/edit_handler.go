@@ -1,4 +1,3 @@
-// internal/post/edit_handler.go
 package post
 
 import (
@@ -11,7 +10,6 @@ import (
 func RegisterEditRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
-	// ✏️ Edit Post
 	r.Put("/:id", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		var body struct {

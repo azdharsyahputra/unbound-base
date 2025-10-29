@@ -11,11 +11,9 @@ import (
 	"unbound/internal/notification"
 )
 
-// RegisterCommentRoutes handles /posts/:id/comments
 func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
-	// POST /posts/:id/comments
 	r.Post("/:id/comments", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		userID, ok := c.Locals("userID").(uint)
@@ -40,7 +38,6 @@ func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthServic
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to create comment")
 		}
 
-		// ===== 🔔 Buat notifikasi ke pemilik post =====
 		var postOwner struct {
 			ID       uint
 			Username string
@@ -52,20 +49,18 @@ func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthServic
 			WHERE p.id = ?
 		`, postID).Scan(&postOwner).Error; err == nil && postOwner.ID != userID {
 			notif := notification.Notification{
-				UserID:  postOwner.ID,          // penerima notif
-				ActorID: userID,                // pelaku komentar
+				UserID:  postOwner.ID,
+				ActorID: userID,
 				Type:    "comment",
 				PostID:  utils.ToUintPtr(postID),
-				Message: fmt.Sprintf("%s mengomentari postinganmu 💬", postOwner.Username),
+				Message: fmt.Sprintf("%s mengomentari postinganmu", postOwner.Username),
 			}
 			db.Create(&notif)
 		}
-		// ==============================================
 
 		return c.Status(fiber.StatusCreated).JSON(comment)
 	})
 
-	// GET /posts/:id/comments
 	r.Get("/:id/comments", func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		var comments []struct {
@@ -89,7 +84,6 @@ func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthServic
 		return c.JSON(comments)
 	})
 
-	// DELETE /posts/:post_id/comments/:id → hapus komentar milik sendiri
 	r.Delete("/:post_id/comments/:id", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		commentID := c.Params("id")
 		userID := c.Locals("userID").(uint)

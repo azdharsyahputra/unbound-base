@@ -8,7 +8,6 @@ import (
 func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 	r := app.Group("/auth")
 
-	// ==================== REGISTER ====================
 	r.Post("/register", func(c *fiber.Ctx) error {
 		var req RegisterReq
 		if err := c.BodyParser(&req); err != nil {
@@ -25,7 +24,6 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 		})
 	})
 
-	// ==================== LOGIN ====================
 	r.Post("/login", func(c *fiber.Ctx) error {
 		var req LoginReq
 		if err := c.BodyParser(&req); err != nil {
@@ -42,11 +40,10 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 			"access_token":   tok.AccessToken,
 			"refresh_token":  tok.RefreshToken,
 			"token_type":     "Bearer",
-			"expires_in_sec": 86400, // 1 hari
+			"expires_in_sec": 86400,
 		})
 	})
 
-	// ==================== REFRESH TOKEN ====================
 	r.Post("/refresh", func(c *fiber.Ctx) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token"`
@@ -69,7 +66,6 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, svc *AuthService) {
 		})
 	})
 
-	// ==================== LOGOUT ====================
 	r.Post("/logout", func(c *fiber.Ctx) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token"`

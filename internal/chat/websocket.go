@@ -23,7 +23,7 @@ type BroadcastPayload struct {
 
 type WebSocketHub struct {
 	DB        *gorm.DB
-	Rooms     map[uint]map[*websocket.Conn]uint // chatID -> conn:userID
+	Rooms     map[uint]map[*websocket.Conn]uint
 	Mutex     sync.Mutex
 	Broadcast chan BroadcastPayload
 }
@@ -36,9 +36,6 @@ func NewWebSocketHub(db *gorm.DB) *WebSocketHub {
 	}
 }
 
-// =====================================
-// Goroutine utama untuk broadcast pesan
-// =====================================
 func (h *WebSocketHub) Run() {
 	for {
 		payload := <-h.Broadcast
@@ -55,9 +52,6 @@ func (h *WebSocketHub) Run() {
 	}
 }
 
-// =====================================
-// Handle koneksi WebSocket per user
-// =====================================
 func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 	chatID := c.Locals("chat_id").(uint)
 	userID := c.Locals("user_id").(uint)
@@ -69,9 +63,8 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 	h.Rooms[chatID][c] = userID
 	h.Mutex.Unlock()
 
-	log.Printf("🟢 User %d connected to chat %d", userID, chatID)
+	log.Printf("User %d connected to chat %d", userID, chatID)
 
-	// ✅ tandai pesan dari lawan bicara sebagai delivered
 	if err := h.DB.Model(&Message{}).
 		Where("chat_id = ? AND sender_id != ? AND status = ?", chatID, userID, "sent").
 		Update("status", "delivered").Error; err == nil {
@@ -89,10 +82,9 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 		delete(h.Rooms[chatID], c)
 		h.Mutex.Unlock()
 		c.Close()
-		log.Printf("🔴 User %d disconnected from chat %d", userID, chatID)
+		log.Printf("User %d disconnected from chat %d", userID, chatID)
 	}()
 
-	// loop baca pesan dari client
 	for {
 		_, msgData, err := c.ReadMessage()
 		if err != nil {
@@ -106,7 +98,6 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 			continue
 		}
 
-		// simpan ke DB
 		msg := Message{
 			ChatID:   chatID,
 			SenderID: userID,
@@ -119,7 +110,6 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 			continue
 		}
 
-		// 🔔 buat notifikasi untuk lawan bicara
 		var chat Chat
 		if err := h.DB.First(&chat, chatID).Error; err == nil {
 			receiverID := chat.User1ID
@@ -138,11 +128,10 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 			if err := h.DB.Create(&notif).Error; err != nil {
 				log.Printf("❌ gagal buat notif: %v", err)
 			} else {
-				log.Printf("🔔 notif dikirim ke user %d dari %d", receiverID, userID)
+				log.Printf("Notif dikirim ke user %d dari %d", receiverID, userID)
 			}
 		}
 
-		// broadcast realtime
 		h.Broadcast <- BroadcastPayload{
 			Type:      "message",
 			ChatID:    chatID,
@@ -155,9 +144,6 @@ func (h *WebSocketHub) HandleWebSocket(c *websocket.Conn) {
 	}
 }
 
-// ==============================
-// Kirim event manual (dipanggil dari handler)
-// ==============================
 func (h *WebSocketHub) BroadcastEvent(chatID uint, payload BroadcastPayload) {
 	h.Mutex.Lock()
 	conns := h.Rooms[chatID]

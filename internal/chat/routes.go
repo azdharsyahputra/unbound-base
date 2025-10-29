@@ -11,21 +11,16 @@ import (
 	"unbound/internal/common/middleware"
 )
 
-// RegisterChatRoutes mendaftarkan semua route untuk fitur chat (REST + WebSocket)
 func RegisterChatRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	// Inisialisasi service dan hub
 	svc := NewChatService(db)
 	hub := NewWebSocketHub(db)
-	go hub.Run() // jalankan listener broadcast
+	go hub.Run()
 
-	// Handler sekarang butuh hub untuk broadcast status read
 	h := NewChatHandler(svc, hub)
 
-	// ===== REST API Chat =====
-	// Gunakan JWTProtected untuk validasi token dari header Authorization
 	r := app.Group("/chats", middleware.JWTProtected(authSvc))
 
-	// Ambil daftar chat milik user
 	r.Get("/", func(c *fiber.Ctx) error {
 		userID := c.Locals("userID").(uint)
 		var chats []Chat
@@ -42,20 +37,11 @@ func RegisterChatRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 		return c.JSON(chats)
 	})
 
-	// Buat atau ambil chat antar user
 	r.Post("/:user_id", h.GetOrCreateChat)
-
-	// Ambil semua pesan di chat
 	r.Get("/:chat_id/messages", h.GetMessages)
-
-	// Kirim pesan baru
 	r.Post("/:chat_id/messages", h.SendMessage)
-
-	// Tandai semua pesan sebagai 'read'
 	r.Put("/:chat_id/read", h.MarkAsRead)
 
-	// ===== WebSocket Chat =====
-	// Gunakan query token: ?token=<JWT>
 	app.Get("/ws/chat/:chat_id",
 		middleware.WebSocketAuth(os.Getenv("JWT_SECRET")),
 		websocket.New(func(c *websocket.Conn) {

@@ -83,7 +83,8 @@ unbound/
 │   ├── chat/             # Private chat, WebSocket, message delivery
 │   ├── notification/     # Sistem notifikasi (event-based)
 │   └── common/           # DB, middleware, utils
-└── go.mod
+|── go.mod
+└── .env
 ```
 
 ---

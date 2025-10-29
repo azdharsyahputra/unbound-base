@@ -10,7 +10,6 @@ import (
 func RegisterRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/notifications")
 
-	// 🔔 Ambil semua notifikasi user
 	r.Get("/", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		userID := c.Locals("userID").(uint)
 
@@ -25,7 +24,6 @@ func RegisterRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 		})
 	})
 
-	// ✅ Tandai semua sebagai read
 	r.Post("/read", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		userID := c.Locals("userID").(uint)
 		if err := db.Model(&Notification{}).Where("user_id = ?", userID).Update("is_read", true).Error; err != nil {

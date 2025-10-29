@@ -12,11 +12,9 @@ import (
 	"unbound/internal/notification"
 )
 
-// RegisterLikeRoutes handles /posts/:id/like and /posts/:id/likes
 func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) {
 	r := app.Group("/posts")
 
-	// POST /posts/:id/like → toggle like/unlike
 	r.Post("/:id/like", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		userID, ok := c.Locals("userID").(uint)
@@ -28,7 +26,6 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 		if err := db.Where("user_id = ? AND post_id = ?", userID, postID).
 			Limit(1).Find(&existing).Error; err == nil && existing.ID != 0 {
 
-			// sudah like → unlike
 			if err := db.Delete(&existing).Error; err != nil {
 				return fiber.NewError(fiber.StatusInternalServerError, "failed to unlike")
 			}
@@ -43,7 +40,6 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to like")
 		}
 
-		// 🔍 Ambil data post + pemiliknya
 		var postOwner struct {
 			ID        uint
 			OwnerName string
@@ -58,14 +54,13 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 			WHERE p.id = ?
 		`, userID, postID).Scan(&postOwner)
 
-		// 🔔 Notifikasi ke pemilik post (jika bukan dirinya sendiri)
 		if postOwner.ID != userID && postOwner.ID != 0 {
 			notif := notification.Notification{
-				UserID:  postOwner.ID,       // penerima notif
-				ActorID: userID,             // pelaku like
+				UserID:  postOwner.ID,
+				ActorID: userID,
 				Type:    "like",
 				PostID:  utils.ToUintPtr(postID),
-				Message: fmt.Sprintf("%s menyukai postinganmu ❤️", postOwner.ActorName),
+				Message: fmt.Sprintf("%s menyukai postinganmu", postOwner.ActorName),
 			}
 			db.Create(&notif)
 		}
@@ -73,7 +68,6 @@ func RegisterLikeRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService) 
 		return c.JSON(fiber.Map{"liked": true})
 	})
 
-	// GET /posts/:id/likes → total like
 	r.Get("/:id/likes", func(c *fiber.Ctx) error {
 		postID := c.Params("id")
 		var count int64
