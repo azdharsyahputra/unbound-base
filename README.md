@@ -1,14 +1,34 @@
-# 🌀 Unbound Base — Barebone Backend (V1.0)
+# 🌀 Unbound Base v1.0 — Barebone Social Backend
 
 **Unbound Base** adalah *skeleton backend* dari proyek sosial media terdistribusi **Unbound**, dibangun dengan **Go + Fiber + PostgreSQL**.  
-Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi microservices.
+Versi ini merupakan rilis **v1.0 stable**, mencakup semua fondasi utama untuk sistem sosial: autentikasi, posting, komentar, like, follow, feed, search, dan notifikasi.
 
 ---
 
+## ✨ What's New in v1.0
+- ✅ **Full Auth System** — Register, login, refresh token, dan logout  
+- ✅ **Notification System** — Fetch & mark as read untuk like, comment, dan follow  
+- ✅ **Feed System** — Timeline publik & following dengan pagination dan sorting  
+- ✅ **User & Follow System** — Profil, follow/unfollow, list followers/following  
+- ✅ **Post & Comment System** — CRUD post, komentar, likes, dan counting  
+- ✅ **Search System** — Pencarian user & post dengan filter dan sort  
+
+---
+## 🚧 Ongoing Development
+- 💬 Direct Message / Chat System — Sistem chat antar user (private messaging)
+- 🌀 Topic - Sistem pengelompokan makna postingan
+- 🌐 Realtime Update — WebSocket layer untuk notifikasi & chat
+- 🧩 Microservice Split — Pisahkan auth, post, user, dan notification ke service mandiri
+- 🐳 Docker Compose Setup — Containerisasi full stack backend
+- 🔍 ElasticSearch Integration — Pencarian lebih cepat dan relevan
+- ⚙️ Machine Learning Integration - Rekomendasi feed yang lebih relevan
+
+---
 ## ⚙️ Tech Stack
 - **Go (Fiber v2)** – Fast HTTP framework  
 - **GORM + PostgreSQL** – ORM dan database utama  
-- **JWT (golang-jwt/v5)** – Autentikasi stateless  
+- **JWT (golang-jwt/v5)** – Autentikasi stateless (access + refresh token)  
+- **Notification System** – Event-based alert untuk like, comment, follow  
 - **Docker (future)** – Containerization  
 - **Kafka, MinIO, Redis (planned)** – Event bus, storage, caching  
 
@@ -19,13 +39,13 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | Method | Endpoint | Deskripsi |
 |:--|:--|:--|
 | `POST` | `/auth/register` | Register user baru |
-| `POST` | `/auth/login` | Login dan dapatkan access_token + refresh_token |
-| `POST` | `/auth/refresh` | Memperbarui access_token menggunakan refresh_token |
-| `POST` | `/auth/logout` | Logout user dan hapus refresh_token dari database |
+| `POST` | `/auth/login` | Login dan dapatkan JWT |
+| `POST` | `/auth/refresh` | Refresh access token |
+| `POST` | `/auth/logout` | Logout dan hapus refresh token |
 | `POST` | `/posts` | Buat posting (auth) |
 | `PUT` | `/posts/:id` | Edit posting milik sendiri |
 | `DELETE` | `/posts/:id` | Hapus posting milik sendiri |
-| `GET` | `/feed` | Lihat timeline publik (support limit, offset, sort) |
+| `GET` | `/feed` | Lihat timeline publik |
 | `GET` | `/feed/following` | Lihat timeline dari user yang di-follow |
 | `GET` | `/users/:username` | Lihat profil dan post user |
 | `POST` | `/users/:username/follow` | Follow / Unfollow user |
@@ -38,8 +58,8 @@ Tujuan repo ini adalah menyediakan fondasi API utama sebelum dipisah menjadi mic
 | `GET` | `/posts/:id/comments` | Lihat semua komentar |
 | `DELETE` | `/posts/:post_id/comments/:id` | Hapus komentar milik sendiri |
 | `POST` | `/search?query=` | Pencarian beserta filter by user,post,oldest/newest |
-| `GET` | `/notifications` | (Planned) Ambil notifikasi baru |
-| `POST` | `/notifications/read` | (Planned) Tandai notifikasi sebagai dibaca |
+| `GET` | `/notifications` | Ambil daftar notifikasi (like, comment, follow) |
+| `POST` | `/notifications/read` | Tandai semua notifikasi user sebagai dibaca |
 
 ---
 
@@ -52,6 +72,7 @@ unbound/
 │   ├── post/             # Post, like, comment, feed, edit
 │   ├── user/             # Profile & follow system
 │   ├── search/           # Pencarian user & post
+│   ├── notification/     # Sistem notifikasi
 │   └── common/           # DB, middleware, utils
 └── go.mod
 ```
