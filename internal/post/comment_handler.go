@@ -88,4 +88,28 @@ func RegisterCommentRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthServic
 
 		return c.JSON(comments)
 	})
+
+	// DELETE /posts/:post_id/comments/:id → hapus komentar milik sendiri
+	r.Delete("/:post_id/comments/:id", middleware.JWTProtected(authSvc), func(c *fiber.Ctx) error {
+		commentID := c.Params("id")
+		userID := c.Locals("userID").(uint)
+
+		var comment Comment
+		if err := db.First(&comment, commentID).Error; err != nil {
+			return fiber.NewError(fiber.StatusNotFound, "comment not found")
+		}
+
+		if comment.UserID != userID {
+			return fiber.NewError(fiber.StatusForbidden, "cannot delete others' comment")
+		}
+
+		if err := db.Delete(&comment).Error; err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "failed to delete comment")
+		}
+
+		return c.JSON(fiber.Map{
+			"success": true,
+			"message": "comment deleted successfully",
+		})
+	})
 }

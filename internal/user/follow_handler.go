@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -32,37 +33,34 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		}
 
 		var existing Follow
-		err := db.Where("follower_id = ? AND following_id = ?", userID, target.ID).First(&existing).Error
+		if err := db.Where("follower_id = ? AND following_id = ?", userID, target.ID).
+			Limit(1).Find(&existing).Error; err == nil && existing.ID != 0 {
 
-		// sudah follow → unfollow
-		if err == nil {
+			// Sudah follow → unfollow
 			if err := db.Delete(&existing).Error; err != nil {
 				return fiber.NewError(fiber.StatusInternalServerError, "failed to unfollow")
 			}
 			return c.JSON(fiber.Map{"following": false})
 		}
 
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusInternalServerError, "query error")
-		}
-
-		// belum follow → follow
 		newFollow := Follow{FollowerID: userID, FollowingID: target.ID}
 		if err := db.Create(&newFollow).Error; err != nil {
+			if strings.Contains(err.Error(), "unique") {
+				return c.JSON(fiber.Map{"following": true})
+			}
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to follow")
 		}
 
-		// ===== 🔔 Buat notifikasi ke user yang di-follow =====
+		// 🔔 Kirim notifikasi follow
 		if target.ID != userID {
 			notif := notification.Notification{
-				UserID:  target.ID,     // penerima notif
-				ActorID: userID,        // pelaku follow
+				UserID:  target.ID,
+				ActorID: userID,
 				Type:    "follow",
 				Message: fmt.Sprintf("Kamu mendapatkan pengikut baru 👥"),
 			}
 			db.Create(&notif)
 		}
-		// =====================================================
 
 		return c.JSON(fiber.Map{"following": true})
 	})
@@ -81,7 +79,7 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		}
 
 		query := `
-			SELECT u.username
+			SELECT DISTINCT u.username
 			FROM follows f
 			JOIN users u ON u.id = f.follower_id
 			WHERE f.following_id = ?
@@ -107,7 +105,7 @@ func RegisterFollowRoutes(app *fiber.App, db *gorm.DB, authSvc *auth.AuthService
 		}
 
 		query := `
-			SELECT u.username
+			SELECT DISTINCT u.username
 			FROM follows f
 			JOIN users u ON u.id = f.following_id
 			WHERE f.follower_id = ?

@@ -11,6 +11,7 @@ import (
 	"unbound/internal/auth"
 	"unbound/internal/post"
 	"unbound/internal/user"
+	"unbound/internal/notification"
 )
 
 // Connect membuka koneksi ke PostgreSQL dan menjalankan migrasi model
@@ -37,6 +38,7 @@ func Connect() *gorm.DB {
 		&post.Comment{},
 		&user.Follow{},
 		&auth.RefreshToken{},
+		&notification.Notification{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Migration failed: %v", err)
